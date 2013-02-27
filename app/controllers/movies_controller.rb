@@ -7,12 +7,12 @@ class MoviesController < ApplicationController
   end
 
   def index
-    #@all_ratings = Movie.all
     @sort = params[:sort] || session[:sort]
     if @sort == 'title'
       @movies = Movie.order(@sort)
       @title_header = "hilite"
     elsif @sort == 'release_date'
+    
       @movies = Movie.order(@sort)
       @release_date_header = "hilite"
     else
@@ -20,6 +20,14 @@ class MoviesController < ApplicationController
     end
     if params[:sort] != session[:sort]
       session[:sort] = @sort
+      if params.has_value?('title') or session.has_value?('title')
+        flash.keep
+        redirect_to movies_path(:sort => 'title', :id => 'title')
+      elsif params.has_value?('release_date') or session.has_value?('release_date')
+        flash.keep
+        redirect_to movies_path(:sort => 'release_date', :id => 'release_date_header')
+      end
+      
     end
   end
 
