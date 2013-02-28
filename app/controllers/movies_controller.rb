@@ -7,27 +7,53 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @sort = params[:sort] || session[:sort]
-    if @sort == 'title'
-      @movies = Movie.order(@sort)
-      @title_header = "hilite"
-    elsif @sort == 'release_date'
+  
+    @all_ratings = Movie.all_ratings
+    @ratings = Hash.new
     
-      @movies = Movie.order(@sort)
-      @release_date_header = "hilite"
-    else
-      @movies = Movie.all
-    end
-    if params[:sort] != session[:sort]
-      session[:sort] = @sort
-      if params.has_value?('title') or session.has_value?('title')
-        flash.keep
-        redirect_to movies_path(:sort => 'title', :id => 'title')
-      elsif params.has_value?('release_date') or session.has_value?('release_date')
-        flash.keep
-        redirect_to movies_path(:sort => 'release_date', :id => 'release_date_header')
+    if session[:ratings] && !params[:ratings]
+      if session[:loop_stop] == 0 || session[:loop_stop].nil?
+        redirect_to movies_path session[:ratings] 
+        session[:loop_stop] = 1
+      else
+        session[:loop_stop] = 0
       end
-      
+    end
+
+    if !params[:sort].nil?
+      session[:sort] = params[:sort]
+    end
+    
+    if params.key? :ratings
+      session[:ratings] = params[:ratings]
+    elsif params.key? :commit
+      session[:ratings] = nil
+    end
+    @sort = session[:sort]
+    @ratings = session[:ratings]
+    
+    if @ratings != nil
+      @movies = Movie.order(@sort).where("title != ''").select do |m|
+          @ratings.include? m.rating
+      end
+    else
+      @movies = Movie.order(@sort).all
+    end
+
+    if session[:sort] == 'title'
+      @title_header = 'hilite'
+    elsif session[:sort] == 'release_date'
+      @release_date_header = 'hilite'
+    end
+     
+    @all_ratings.each do |rating| 
+      if session[:ratings].class == Hash
+        if session[:ratings].key? rating
+          @ratings[rating]= false
+        else
+          @ratings[rating] = true
+        end
+      end
     end
   end
 
